@@ -14,7 +14,6 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -121,25 +120,6 @@ def _scope_matches(memory: LocalMemory, scope: str | None) -> bool:
     return "*" in scopes or scope in scopes
 
 
-def _updated_at_sort_key(memory: LocalMemory) -> datetime:
-    if not memory.updated_at:
-        return datetime.min.replace(tzinfo=timezone.utc)
-    value = memory.updated_at.strip()
-    if value.endswith("Z"):
-        value = value[:-1] + "+00:00"
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError:
-        return datetime.min.replace(tzinfo=timezone.utc)
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed
-
-
-def _sort_by_updated_at_desc(memories: list[LocalMemory]) -> list[LocalMemory]:
-    return sorted(memories, key=_updated_at_sort_key, reverse=True)
-
-
 def _filtered_memories(
     *,
     kind: str | None = None,
@@ -189,7 +169,7 @@ def _bootstrap_handler(args: dict, **_: Any) -> str:
     recent_limit = int(args.get("recent_limit") or 5)
     include_daily = bool(args.get("include_daily", False))
     souls = _filtered_memories(kind="soul", scope=scope, include_daily=include_daily)
-    recent = _sort_by_updated_at_desc(_filtered_memories(scope=scope, include_daily=include_daily))
+    recent = _filtered_memories(scope=scope, include_daily=include_daily)
     recent = [m for m in recent if m.kind != "soul"][: max(1, min(recent_limit, 20))]
 
     lines = [

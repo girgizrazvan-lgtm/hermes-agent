@@ -108,33 +108,3 @@ def test_bootstrap_contains_soul_recent_and_index(monkeypatch, tmp_path):
     assert "comunicare_reguli" in text
     assert "user_identitate_core" in text
     assert "## Index" in text
-
-
-def test_bootstrap_recent_memories_are_sorted_by_updated_at_desc(monkeypatch, tmp_path):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    root = tmp_path / "memory"
-    _write_import(root)
-    (root / "personal-memory-import-memory-02.md").write_text(
-        """# Personal Memory MCP Import: memory chunk 2
-
----
-
-## state_newer_context
-
-- id: `4`
-- kind: `memory`
-- type: `project`
-- scopes: `assistant`
-- updated_at: `2026-05-24T10:00:00.000Z`
-- description: Newer operating context.
-
-### Content
-
-This is the freshest context.
-""",
-        encoding="utf-8",
-    )
-
-    text = fallback._bootstrap_handler({"scope": "assistant", "recent_limit": 2})
-
-    assert text.index("state_newer_context") < text.index("user_identitate_core")
